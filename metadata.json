@@ -1,0 +1,6 @@
+{
+  "name": "Coup Online Planner",
+  "description": "Multiplayer real-time Coup game implemented with Socket.io and React.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
