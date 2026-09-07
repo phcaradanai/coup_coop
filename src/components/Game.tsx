@@ -11,6 +11,7 @@ import GameSidebar from "./GameSidebar";
 import RulesOverlay from "./RulesOverlay";
 import AudioControls from "./AudioControls";
 import CyberFxOverlay, { CyberFxEvent } from "./CyberFxOverlay";
+import GameFxLayer from "./GameFxLayer";
 import { getHighFxSetting, FX_CHANGE_EVENT } from "../utils/fxSettings";
 import CardFocusModal from "./CardFocusModal";
 
@@ -98,14 +99,10 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
         } else if (latestLog.includes("สังหาร")) {
           soundManager.playBladeSlash();
           triggerScreenShake();
-          setActiveFx({ type: "assassinate", id: String(Date.now()) });
-          setTimeout(() => setActiveFx(null), 900);
           setActionBanner({ title: "ASSASSINATION!", subtitle: latestLog.replace(/\[.*?\]\s*/, ""), type: "assassinate" });
           setTimeout(() => setActionBanner(null), 2500);
         } else if (latestLog.includes("ขโมย")) {
           soundManager.playStealTransfer();
-          setActiveFx({ type: "steal", id: String(Date.now()) });
-          setTimeout(() => setActiveFx(null), 900);
         } else if (latestLog.includes("เสีย") || latestLog.includes("กำจัด")) {
           soundManager.playCardShatter();
           triggerScreenShake();
@@ -272,8 +269,9 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
 
   return (
     <div className={`flex flex-col h-full w-full overflow-hidden relative transition-transform duration-75 ${screenShake ? 'translate-x-1 -translate-y-1 rotate-[0.5deg]' : ''}`}>
-      {/* Cyberpunk Action Screen Overlays */}
+      {/* Cinematic full-screen FX + single-canvas role/action FX */}
       <CyberFxOverlay activeFx={activeFx} highFxEnabled={highFxEnabled} />
+      <GameFxLayer gameState={gameState} enabled={highFxEnabled} />
 
       {amITargeted && (
         <div className="absolute inset-0 pointer-events-none z-50 animate-pulse border-8 border-red-600/50 mix-blend-screen bg-red-900/10 shadow-[inset_0_0_100px_rgba(220,38,38,0.5)]"></div>
@@ -402,7 +400,7 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
                     </div>
                     <span className="text-amber-500 font-bold text-base shrink-0 tracking-tighter ml-2">● {p.coins} เหรียญ</span>
                   </div>
-                  <div className="flex gap-2 relative">
+                  <div className="flex gap-2 relative" data-fx-player-id={p.id}>
                     {p.influences.map((c, i) => (
                       <div key={`h_${i}`} className={`h-14 w-10 bg-zinc-800 border border-zinc-700 rounded flex items-center justify-center text-sm font-bold text-zinc-400 uppercase ${i === 0 ? 'rotate-[-4deg]' : 'rotate-[2deg]'}`}>?</div>
                     ))}
@@ -494,7 +492,7 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
           <div className="absolute inset-x-0 top-0 h-px bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.9)] animate-sweep-line"></div>
         )}
         
-        <div className="flex flex-col justify-center gap-2 shrink-0 transition-all">
+        <div className="flex flex-col justify-center gap-2 shrink-0 transition-all" data-fx-player-id={me.id}>
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm text-zinc-400 uppercase tracking-widest whitespace-nowrap font-bold">
               ไพ่บนมือ ({me.name})
