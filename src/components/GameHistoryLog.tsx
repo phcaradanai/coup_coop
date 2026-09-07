@@ -49,16 +49,16 @@ export default function GameHistoryLog({ logs }: { logs: string[] }) {
   };
 
   return (
-    <div className="absolute bottom-4 left-4 w-72 md:w-80 max-w-[calc(100vw-2rem)] bg-zinc-950/90 backdrop-blur-md border border-zinc-800 rounded-lg overflow-hidden flex flex-col shadow-2xl z-30 h-48 md:h-56 pointer-events-auto transition-all">
-      <div className="p-2 border-b border-zinc-800 shrink-0 bg-zinc-900/50 flex justify-between items-center">
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
+    <div className="absolute bottom-4 left-4 w-80 md:w-96 max-w-[calc(100vw-2rem)] bg-zinc-950/95 backdrop-blur-md border border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-2xl z-30 h-56 md:h-64 pointer-events-auto transition-all">
+      <div className="p-2.5 border-b border-zinc-800 shrink-0 bg-zinc-900/60 flex justify-between items-center">
+        <h2 className="text-base font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
           บันทึกการเล่น
         </h2>
       </div>
       <div 
         ref={scrollRef} 
-        className="flex-1 overflow-y-auto p-3 font-mono text-[11px] md:text-xs flex flex-col gap-2 relative scroll-smooth"
+        className="flex-1 overflow-y-auto p-3.5 font-mono text-base flex flex-col gap-2 relative scroll-smooth"
       >
         {logs.map((log, i) => (
           <div 

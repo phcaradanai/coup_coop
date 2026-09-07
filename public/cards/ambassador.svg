@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 600" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad_Amb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#040d0a" />
+      <stop offset="50%" stop-color="#081813" />
+      <stop offset="100%" stop-color="#0f2b20" />
+    </linearGradient>
+
+    <radialGradient id="aura_Amb" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.45" />
+      <stop offset="60%" stop-color="#059669" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Armor & Coat Gradients -->
+    <linearGradient id="coat_Amb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#132a22" />
+      <stop offset="50%" stop-color="#0a1a14" />
+      <stop offset="100%" stop-color="#040d0a" />
+    </linearGradient>
+
+    <linearGradient id="neonEmerald" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#6ee7b7" />
+    </linearGradient>
+
+    <linearGradient id="hairAmb" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="40%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+
+    <!-- Glow Filters -->
+    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="dataGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Card Background -->
+  <rect width="450" height="600" rx="20" fill="url(#bgGrad_Amb)" stroke="#114232" stroke-width="3" />
+  <rect x="10" y="10" width="430" height="580" rx="14" fill="none" stroke="#10b981" stroke-width="1.5" stroke-opacity="0.4" />
+  
+  <!-- Ambient Core Glow -->
+  <circle cx="225" cy="270" r="210" fill="url(#aura_Amb)" />
+
+  <!-- Background Data Grid -->
+  <g opacity="0.15" stroke="#10b981" stroke-width="1">
+    <line x1="30" y1="120" x2="420" y2="120" />
+    <line x1="30" y1="200" x2="420" y2="200" />
+    <line x1="30" y1="280" x2="420" y2="280" />
+    <line x1="30" y1="360" x2="420" y2="360" />
+    <line x1="30" y1="440" x2="420" y2="440" />
+    <line x1="120" y1="80" x2="120" y2="500" stroke-dasharray="8,4" />
+    <line x1="225" y1="80" x2="225" y2="500" stroke-dasharray="4,4" />
+    <line x1="330" y1="80" x2="330" y2="500" stroke-dasharray="8,4" />
+  </g>
+
+  <!-- Floating Holographic Data Stream Panels (Behind Character) -->
+  <g filter="url(#dataGlow)" opacity="0.7">
+    <!-- Left Data Stream Panel -->
+    <rect x="50" y="180" width="80" height="150" rx="4" fill="#042f2e" fill-opacity="0.3" stroke="#10b981" stroke-width="1.5" stroke-dasharray="10,5" />
+    <line x1="60" y1="200" x2="110" y2="200" stroke="#34d399" stroke-width="1.5" />
+    <line x1="60" y1="220" x2="120" y2="220" stroke="#34d399" stroke-width="1" />
+    <line x1="60" y1="240" x2="95" y2="240" stroke="#34d399" stroke-width="1" />
+    <line x1="60" y1="260" x2="115" y2="260" stroke="#34d399" stroke-width="1.5" />
+    <line x1="60" y1="280" x2="105" y2="280" stroke="#34d399" stroke-width="1" />
+
+    <!-- Right Data Stream Panel -->
+    <rect x="320" y="160" width="80" height="160" rx="4" fill="#042f2e" fill-opacity="0.3" stroke="#10b981" stroke-width="1.5" stroke-dasharray="10,5" />
+    <line x1="330" y1="180" x2="385" y2="180" stroke="#34d399" stroke-width="1.5" />
+    <line x1="330" y1="200" x2="370" y2="200" stroke="#34d399" stroke-width="1" />
+    <line x1="330" y1="220" x2="390" y2="220" stroke="#34d399" stroke-width="1.5" />
+    <line x1="330" y1="240" x2="360" y2="240" stroke="#34d399" stroke-width="1" />
+    <line x1="330" y1="260" x2="380" y2="260" stroke="#34d399" stroke-width="1" />
+    <line x1="330" y1="280" x2="375" y2="280" stroke="#34d399" stroke-width="1.5" />
+  </g>
+
+  <!-- CHARACTER ART: AMBASSADOR (Cyber Diplomat) -->
+  <g transform="translate(0, 15)">
+    
+    <!-- Coat Back / Collar High Silhouette -->
+    <path d="M 140 400 L 160 300 L 225 320 L 290 300 L 310 400 Z" fill="#061c14" />
+
+    <!-- Shoulders & Aristocratic Cyber-Trenchcoat -->
+    <path d="M 110 490 Q 135 390 170 355 L 225 375 L 280 355 Q 315 390 340 490 L 380 560 L 70 560 Z" fill="url(#coat_Amb)" stroke="#064e3b" stroke-width="2" />
+
+    <!-- Glowing Trenchcoat Lapels (Emerald Neon Accents) -->
+    <path d="M 170 355 L 210 440 L 225 470 L 240 440 L 280 355 L 255 350 L 225 410 L 195 350 Z" fill="#042f2e" stroke="#10b981" stroke-width="1.5" />
+    
+    <!-- Neon Lapel Piping -->
+    <line x1="170" y1="355" x2="225" y2="470" stroke="#34d399" stroke-width="2" filter="url(#glowGreen)" />
+    <line x1="280" y1="355" x2="225" y2="470" stroke="#34d399" stroke-width="2" filter="url(#glowGreen)" />
+
+    <!-- High Tech Tie / Neural Conduit Nexus -->
+    <polygon points="220,380 230,380 227,450 223,450" fill="#10b981" filter="url(#glowGreen)" />
+    <circle cx="225" cy="378" r="4" fill="#a7f3d0" />
+
+    <!-- Shoulder Epaulets / Hologram Emitters -->
+    <path d="M 110 445 L 145 375 L 175 390 L 135 465 Z" fill="#0a2a1f" stroke="#10b981" stroke-width="1.5" />
+    <path d="M 340 445 L 305 375 L 275 390 L 315 465 Z" fill="#0a2a1f" stroke="#10b981" stroke-width="1.5" />
+    <circle cx="140" cy="385" r="3" fill="#6ee7b7" filter="url(#glowGreen)" />
+    <circle cx="310" cy="385" r="3" fill="#6ee7b7" filter="url(#glowGreen)" />
+
+    <!-- Neck & Tech-Collar -->
+    <path d="M 205 285 L 205 340 Q 225 348 245 340 L 245 285 Z" fill="#d8c5b8" />
+    <path d="M 195 315 L 225 335 L 255 315" fill="none" stroke="#10b981" stroke-width="2" filter="url(#glowGreen)" />
+
+    <!-- Diplomat Face Structure -->
+    <path d="M 180 215 Q 180 295 225 312 Q 270 295 270 215 Q 270 170 225 170 Q 180 170 180 215 Z" fill="#ebded6" />
+
+    <!-- Jaw Shadow -->
+    <path d="M 195 270 Q 225 312 255 270 Q 225 292 195 270 Z" fill="#caa494" opacity="0.5" />
+
+    <!-- Thin Calm Lips -->
+    <path d="M 215 278 Q 225 275 235 278" fill="none" stroke="#8c584b" stroke-width="2" stroke-linecap="round" />
+
+    <!-- Nose Bridge & Contour -->
+    <path d="M 223 235 L 221 258 L 228 259" fill="none" stroke="#a37365" stroke-width="1.5" stroke-linecap="round" />
+
+    <!-- Eyes (Diplomatic Sharp Gaze) -->
+    <!-- Left Eye -->
+    <ellipse cx="204" cy="236" rx="7" ry="3.5" fill="#ffffff" />
+    <circle cx="205" cy="236" r="2.5" fill="#047857" />
+    <!-- Right Eye with AR Cybernetic Monocle Implant -->
+    <ellipse cx="246" cy="236" rx="7" ry="3.5" fill="#ffffff" />
+    <circle cx="245" cy="236" r="2.5" fill="#10b981" />
+
+    <!-- AR SMART MONOCLE / AUGMENTED RETICULE (Right Eye) -->
+    <g filter="url(#glowGreen)">
+      <circle cx="245" cy="236" r="14" fill="#10b981" fill-opacity="0.2" stroke="#34d399" stroke-width="1.5" />
+      <circle cx="245" cy="236" r="8" fill="none" stroke="#6ee7b7" stroke-width="1" stroke-dasharray="3,2" />
+      <!-- Monocle Data Bracket Wire -->
+      <path d="M 259 236 L 275 230 L 282 238" fill="none" stroke="#34d399" stroke-width="1.5" />
+      <!-- Data Coordinate Blip -->
+      <line x1="245" y1="220" x2="245" y2="224" stroke="#ffffff" stroke-width="1.5" />
+      <line x1="245" y1="248" x2="245" y2="252" stroke="#ffffff" stroke-width="1.5" />
+      <line x1="229" y1="236" x2="233" y2="236" stroke="#ffffff" stroke-width="1.5" />
+      <line x1="257" y1="236" x2="261" y2="236" stroke="#ffffff" stroke-width="1.5" />
+    </g>
+
+    <!-- Sleek Diplomat Hair (Styled Side Part with Neon Tracery) -->
+    <path d="M 175 210 Q 170 150 225 145 Q 280 150 275 210 Q 255 160 225 160 Q 195 160 175 210 Z" fill="url(#hairAmb)" />
+    <!-- Hair Side Parting -->
+    <path d="M 175 195 Q 210 160 255 170 Q 235 150 195 155 Z" fill="#34d399" opacity="0.6" filter="url(#glowGreen)" />
+
+    <!-- Forehead Neural Jack Implant -->
+    <circle cx="200" cy="190" r="2.5" fill="#10b981" filter="url(#glowGreen)" />
+    <line x1="200" y1="190" x2="190" y2="185" stroke="#34d399" stroke-width="1" filter="url(#glowGreen)" />
+
+    <!-- Floating Hologram Datapad / Treaty Scroll (In Front) -->
+    <g filter="url(#glowGreen)" transform="translate(145, 420)">
+      <rect x="0" y="0" width="160" height="70" rx="8" fill="#022c22" fill-opacity="0.8" stroke="#34d399" stroke-width="2" />
+      <!-- Hologram Card Icons / Exchange Preview -->
+      <rect x="15" y="15" width="28" height="40" rx="4" fill="#047857" fill-opacity="0.6" stroke="#6ee7b7" stroke-width="1" />
+      <rect x="52" y="15" width="28" height="40" rx="4" fill="#047857" fill-opacity="0.6" stroke="#6ee7b7" stroke-width="1" />
+      <!-- Arrow exchange icon in hologram -->
+      <path d="M 90 30 L 105 30 L 100 25 M 105 30 L 100 35" fill="none" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round" />
+      <path d="M 105 40 L 90 40 L 95 35 M 90 40 L 95 45" fill="none" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round" />
+      <rect x="118" y="15" width="28" height="40" rx="4" fill="#047857" fill-opacity="0.6" stroke="#6ee7b7" stroke-width="1" />
+      <!-- Pulsing Data Dot -->
+      <circle cx="150" cy="8" r="3" fill="#6ee7b7" />
+    </g>
+
+  </g>
+
+  <!-- Card Top Header Label -->
+  <g transform="translate(225, 42)">
+    <rect x="-125" y="-18" width="250" height="34" rx="6" fill="#041a13" stroke="#10b981" stroke-width="1.5" />
+    <text x="0" y="5" font-family="'Courier New', monospace" font-size="13" font-weight="900" fill="#a7f3d0" text-anchor="middle" letter-spacing="4">ROLE // AMBASSADOR</text>
+  </g>
+
+  <!-- Card Bottom Label Banner -->
+  <g transform="translate(225, 555)">
+    <rect x="-140" y="-18" width="280" height="34" rx="6" fill="#041a13" stroke="#10b981" stroke-width="1.5" />
+    <text x="0" y="5" font-family="'Courier New', monospace" font-size="12" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="3">NEURAL DATA DIPLOMAT</text>
+  </g>
+</svg>

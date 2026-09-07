@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 600" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad_Contessa" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0508" />
+      <stop offset="50%" stop-color="#180a13" />
+      <stop offset="100%" stop-color="#2d0b20" />
+    </linearGradient>
+    
+    <radialGradient id="aura_Contessa" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.45" />
+      <stop offset="60%" stop-color="#e11d48" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Armor & Shield Gradients -->
+    <linearGradient id="armor_Contessa" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a121e" />
+      <stop offset="50%" stop-color="#190912" />
+      <stop offset="100%" stop-color="#0d040a" />
+    </linearGradient>
+
+    <linearGradient id="neonRose" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="50%" stop-color="#fb7185" />
+      <stop offset="100%" stop-color="#fda4af" />
+    </linearGradient>
+
+    <linearGradient id="goldFiligree" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <linearGradient id="hairGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fda4af" />
+      <stop offset="40%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#4c0519" />
+    </linearGradient>
+
+    <!-- Glow Filters -->
+    <filter id="glowRose" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="shieldGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Card Background -->
+  <rect width="450" height="600" rx="20" fill="url(#bgGrad_Contessa)" stroke="#3f1226" stroke-width="3" />
+  <rect x="10" y="10" width="430" height="580" rx="14" fill="none" stroke="#f43f5e" stroke-width="1.5" stroke-opacity="0.4" />
+  
+  <!-- Ambient Core Glow -->
+  <circle cx="225" cy="270" r="210" fill="url(#aura_Contessa)" />
+
+  <!-- Background Cyber Circuit Grid -->
+  <g opacity="0.15" stroke="#f43f5e" stroke-width="1">
+    <line x1="30" y1="120" x2="420" y2="120" />
+    <line x1="30" y1="200" x2="420" y2="200" />
+    <line x1="30" y1="280" x2="420" y2="280" />
+    <line x1="30" y1="360" x2="420" y2="360" />
+    <line x1="30" y1="440" x2="420" y2="440" />
+    <line x1="100" y1="80" x2="100" y2="500" />
+    <line x1="225" y1="80" x2="225" y2="500" stroke-dasharray="6,4" />
+    <line x1="350" y1="80" x2="350" y2="500" />
+  </g>
+
+  <!-- Holographic Shield Barrier Geometry (Behind Character) -->
+  <g filter="url(#shieldGlow)" opacity="0.6">
+    <!-- Concentric Hex Shield Rings -->
+    <polygon points="225,120 345,190 345,330 225,400 105,330 105,190" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="12,6" />
+    <polygon points="225,145 325,202 325,318 225,375 125,318 125,202" fill="none" stroke="#fb7185" stroke-width="1" opacity="0.5" />
+    <!-- Floating Nano Shield Nodes -->
+    <circle cx="225" cy="120" r="4" fill="#fda4af" />
+    <circle cx="345" cy="190" r="4" fill="#fda4af" />
+    <circle cx="345" cy="330" r="4" fill="#fda4af" />
+    <circle cx="225" cy="400" r="4" fill="#fda4af" />
+    <circle cx="105" cy="330" r="4" fill="#fda4af" />
+    <circle cx="105" cy="190" r="4" fill="#fda4af" />
+  </g>
+
+  <!-- CHARACTER ART: CONTESSA (Noblewoman / Cyber Empress) -->
+  <g transform="translate(0, 10)">
+    
+    <!-- Hair Back Volume -->
+    <path d="M 160 210 Q 140 310 130 420 Q 180 430 225 430 Q 270 430 320 420 Q 310 310 290 210 Z" fill="url(#hairGrad)" />
+
+    <!-- Shoulders & High-tech Armor Gown -->
+    <path d="M 120 480 Q 140 400 175 365 L 225 385 L 275 365 Q 310 400 330 480 L 370 560 L 80 560 Z" fill="url(#armor_Contessa)" stroke="#4c0519" stroke-width="2" />
+    
+    <!-- High-Collar Nanotech Gorget -->
+    <path d="M 175 365 L 195 315 L 225 330 L 255 315 L 275 365 L 225 390 Z" fill="#1f0914" stroke="url(#goldFiligree)" stroke-width="1.5" />
+
+    <!-- Chest Nano-Core Power Rose -->
+    <circle cx="225" cy="405" r="14" fill="#0f0207" stroke="#f43f5e" stroke-width="2" filter="url(#glowRose)" />
+    <polygon points="225,396 233,405 225,414 217,405" fill="#fda4af" filter="url(#glowRose)" />
+
+    <!-- Armor Shoulder Pauldrons -->
+    <path d="M 120 440 L 155 375 L 180 395 L 140 465 Z" fill="#2d0a1b" stroke="#f43f5e" stroke-width="1.5" />
+    <path d="M 330 440 L 295 375 L 270 395 L 310 465 Z" fill="#2d0a1b" stroke="#f43f5e" stroke-width="1.5" />
+    
+    <!-- Pauldron Glowing Tracery -->
+    <line x1="140" y1="400" x2="165" y2="440" stroke="#fb7185" stroke-width="1.5" filter="url(#glowRose)" />
+    <line x1="310" y1="400" x2="285" y2="440" stroke="#fb7185" stroke-width="1.5" filter="url(#glowRose)" />
+
+    <!-- Neck & Throat -->
+    <path d="M 205 290 L 205 340 Q 225 350 245 340 L 245 290 Z" fill="#e2b4a8" />
+    <!-- Cybernetic Throat Lines -->
+    <line x1="225" y1="305" x2="225" y2="340" stroke="#f43f5e" stroke-width="1.5" opacity="0.8" />
+    <circle cx="225" cy="335" r="3" fill="#f43f5e" filter="url(#glowRose)" />
+
+    <!-- Face Structure -->
+    <path d="M 180 230 Q 180 305 225 315 Q 270 305 270 230 Q 270 180 225 180 Q 180 180 180 230 Z" fill="#eddcd6" />
+
+    <!-- Chin & Jaw Shadow -->
+    <path d="M 195 270 Q 225 315 255 270 Q 225 295 195 270 Z" fill="#d49b8d" opacity="0.5" />
+
+    <!-- Elegant Lips -->
+    <path d="M 215 282 Q 225 280 235 282 Q 225 290 215 282 Z" fill="#be123c" />
+
+    <!-- Nose Contour -->
+    <path d="M 223 245 L 221 262 L 227 263" fill="none" stroke="#ba8070" stroke-width="1.5" stroke-linecap="round" />
+
+    <!-- Cyber Visor / Ocular Glasses (Aristocratic Cybernetic Eyewear) -->
+    <g filter="url(#glowRose)">
+      <!-- Visor Wing Left -->
+      <polygon points="175,230 220,234 218,246 170,238" fill="url(#neonRose)" opacity="0.95" />
+      <!-- Visor Wing Right -->
+      <polygon points="275,230 230,234 232,246 280,238" fill="url(#neonRose)" opacity="0.95" />
+      <!-- Visor Center Sensor -->
+      <polygon points="220,234 230,234 227,243 223,243" fill="#ffffff" />
+      <!-- Neon Scanner Horizontal Beam -->
+      <line x1="168" y1="237" x2="282" y2="237" stroke="#ffffff" stroke-width="1.5" opacity="0.9" />
+    </g>
+
+    <!-- Hair Front Waves & Braids -->
+    <path d="M 180 180 Q 155 230 165 310 Q 185 270 185 220 Z" fill="url(#hairGrad)" />
+    <path d="M 270 180 Q 295 230 285 310 Q 265 270 265 220 Z" fill="url(#hairGrad)" />
+    <path d="M 180 180 Q 225 160 270 180 Q 245 205 225 195 Q 205 205 180 180 Z" fill="#9f1239" />
+
+    <!-- Cybernetic Tiara / Holographic Crown -->
+    <g filter="url(#glowRose)">
+      <path d="M 190 185 L 225 145 L 260 185 L 245 188 L 225 165 L 205 188 Z" fill="url(#goldFiligree)" stroke="#f43f5e" stroke-width="1" />
+      <polygon points="225,138 230,147 225,155 220,147" fill="#ffffff" />
+      <!-- Floating Crown Hologram Rings -->
+      <ellipse cx="225" cy="155" rx="45" ry="12" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.8" />
+    </g>
+
+    <!-- Foreground Protective Nanoshield Barrier Hexagons (Floating) -->
+    <g filter="url(#glowRose)" opacity="0.85">
+      <!-- Shield Hex 1 -->
+      <polygon points="140,320 170,305 200,320 200,355 170,370 140,355" fill="#f43f5e" fill-opacity="0.15" stroke="#fb7185" stroke-width="1.5" />
+      <!-- Shield Hex 2 -->
+      <polygon points="250,320 280,305 310,320 310,355 280,370 250,355" fill="#f43f5e" fill-opacity="0.15" stroke="#fb7185" stroke-width="1.5" />
+      <!-- Small Energy Sparkles -->
+      <circle cx="170" cy="305" r="2.5" fill="#ffffff" />
+      <circle cx="280" cy="305" r="2.5" fill="#ffffff" />
+    </g>
+
+  </g>
+
+  <!-- Card Top Header Label -->
+  <g transform="translate(225, 42)">
+    <rect x="-120" y="-18" width="240" height="34" rx="6" fill="#14060f" stroke="#f43f5e" stroke-width="1.5" />
+    <text x="0" y="5" font-family="'Courier New', monospace" font-size="13" font-weight="900" fill="#fda4af" text-anchor="middle" letter-spacing="4">ROLE // CONTESSA</text>
+  </g>
+
+  <!-- Card Bottom Label Banner -->
+  <g transform="translate(225, 555)">
+    <rect x="-140" y="-18" width="280" height="34" rx="6" fill="#14060f" stroke="#f43f5e" stroke-width="1.5" />
+    <text x="0" y="5" font-family="'Courier New', monospace" font-size="12" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="3">NANOSHIELD ARISTOCRAT</text>
+  </g>
+</svg>

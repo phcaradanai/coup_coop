@@ -6,18 +6,21 @@ export function useGame() {
   const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uid, setUid] = useState<string>(() => localStorage.getItem("coup_uid") || "");
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   useEffect(() => {
-    let uid = localStorage.getItem("coup_uid");
-    if (!uid) {
-      uid = Math.random().toString(36).substring(2, 12);
-      localStorage.setItem("coup_uid", uid);
+    let currentUid = localStorage.getItem("coup_uid");
+    if (!currentUid) {
+      currentUid = Math.random().toString(36).substring(2, 12);
+      localStorage.setItem("coup_uid", currentUid);
     }
+    setUid(currentUid);
 
     const s = io({
       transports: ["websocket"],
       reconnectionAttempts: Infinity,
-      query: { uid }
+      query: { uid: currentUid }
     });
 
     s.on("connect", () => {
@@ -26,6 +29,7 @@ export function useGame() {
 
     s.on("gameStateUpdate", (state) => {
       setGameState(state);
+      setIsInitialized(true);
     });
 
     s.on("error", (msg) => {
@@ -38,5 +42,5 @@ export function useGame() {
     };
   }, []);
 
-  return { socket, gameState, error };
+  return { socket, gameState, error, uid, isInitialized };
 }

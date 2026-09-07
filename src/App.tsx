@@ -6,8 +6,18 @@ import Game from "./components/Game";
 import { audioFeedback } from "./utils/audio";
 
 export default function App() {
-  const { socket, gameState, error } = useGame();
-  const [playerName, setPlayerName] = useState("");
+  const { socket, gameState, error, uid, isInitialized } = useGame();
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem("coup_name") || "");
+
+  useEffect(() => {
+    if (gameState && uid) {
+      const me = gameState.players.find(p => p.id === uid);
+      if (me?.name) {
+        setPlayerName(me.name);
+        localStorage.setItem("coup_name", me.name);
+      }
+    }
+  }, [gameState, uid]);
 
   useEffect(() => {
     if (error) {
@@ -25,9 +35,19 @@ export default function App() {
     return () => document.removeEventListener("click", handleFirstInteraction);
   }, []);
 
-  if (!socket) {
-    return <div className="flex h-screen items-center justify-center bg-zinc-900 text-white font-sans">Connecting to server...</div>;
+  if (!socket || !isInitialized) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs uppercase tracking-widest font-mono">กำลังเชื่อมต่อระบบ...</span>
+        </div>
+      </div>
+    );
   }
+
+  const me = gameState?.players.find(p => p.id === uid);
+  const isInRoom = !!me;
 
   return (
     <div className="h-screen bg-zinc-950 text-zinc-100 font-sans select-none overflow-hidden flex flex-col relative font-medium">
@@ -40,19 +60,25 @@ export default function App() {
         <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]"></div>
       </div>
 
-      <div className="w-full h-full flex flex-col items-center z-10 relative">
+      <div className="w-full h-full flex flex-col z-10 relative">
         {error && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-red-500/90 text-white px-6 py-3 rounded shadow-2xl z-50">
             {error}
           </div>
         )}
 
-        {!gameState || gameState.status === "LOBBY" && !gameState.players.find(p => p.id === localStorage.getItem("coup_uid")) ? (
-          <Home socket={socket} onJoin={(name) => setPlayerName(name)} />
+        {!gameState || !isInRoom ? (
+          <Home 
+            socket={socket} 
+            onJoin={(name) => {
+              setPlayerName(name);
+              localStorage.setItem("coup_name", name);
+            }} 
+          />
         ) : gameState.status === "LOBBY" ? (
-          <Lobby socket={socket} gameState={gameState} playerName={playerName} />
+          <Lobby socket={socket} gameState={gameState} uid={uid} playerName={playerName || me?.name || ""} />
         ) : (
-          <Game socket={socket} gameState={gameState} playerName={playerName} />
+          <Game socket={socket} gameState={gameState} uid={uid} playerName={playerName || me?.name || ""} />
         )}
       </div>
     </div>
