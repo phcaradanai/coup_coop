@@ -123,14 +123,34 @@ export class GameRoom {
   removePlayer(id: string) {
     const idx = this.state.players.findIndex(p => p.id === id);
     if (idx !== -1) {
-      this.log(`${this.state.players[idx].name} ออกจากห้อง`);
+      const removedPlayer = this.state.players[idx];
+      this.log(`${removedPlayer.name} ออกจากห้อง`);
       this.state.players.splice(idx, 1);
       
-      // If game is playing, handle removal logic (they die)
+      // If game is playing, handle removal logic
       if (this.state.status === "PLAYING") {
+        // Adjust turn index so valid player is targeted
+        if (this.state.players.length > 0) {
+          if (idx < this.state.turnIndex) {
+            this.state.turnIndex--;
+          } else if (this.state.turnIndex >= this.state.players.length) {
+            this.state.turnIndex = 0;
+          }
+        }
+
+        // Clean up currentAction if the removed player was actor or target
+        if (this.state.currentAction) {
+          if (this.state.currentAction.playerId === id || this.state.currentAction.targetId === id) {
+            this.state.currentAction = null;
+            if (this.state.players.length > 0 && this.getAlivePlayers().length > 1) {
+              this.nextTurn();
+            }
+          } else if (this.state.currentAction.passedPlayerIds) {
+            this.state.currentAction.passedPlayerIds = this.state.currentAction.passedPlayerIds.filter(pid => pid !== id);
+          }
+        }
+
         this.checkWinCondition();
-      } else if (this.state.status === "LOBBY" && this.state.players.length === 0) {
-        // Room empty
       }
     }
   }

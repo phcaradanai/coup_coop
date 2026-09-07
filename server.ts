@@ -39,8 +39,30 @@ function cleanupRoom(roomId: string) {
   }
   rooms.delete(roomId);
   roomChats.delete(roomId);
+
+  // Clean up any userRooms entries pointing to this roomId
+  for (const [userId, rId] of Array.from(userRooms.entries())) {
+    if (rId === roomId) {
+      userRooms.delete(userId);
+    }
+  }
+
+  // Notify any remaining sockets in the room that the room has been closed
+  io.to(roomId).emit("gameStateUpdate", null);
+  io.in(roomId).socketsLeave(roomId);
+
   console.log(`Room ${roomId} cleaned up (no human players remaining).`);
 }
+
+// Periodic cleanup: guarantee any room without human players is cleaned up
+setInterval(() => {
+  for (const [roomId, room] of Array.from(rooms.entries())) {
+    if (!hasHumanPlayers(room)) {
+      console.log(`[Periodic Sweeper] Cleaning room ${roomId} (no human players).`);
+      cleanupRoom(roomId);
+    }
+  }
+}, 30000);
 
 
 function getMaskedStateForPlayer(state: GameState, recipientUid: string): GameState {
@@ -591,12 +613,21 @@ io.on("connection", (socket) => {
   }
 
   socket.on("requestRooms", () => {
-    const availableRooms = Array.from(rooms.values()).map(r => ({
-      roomId: r.state.roomId,
-      playersCount: r.state.players.length,
-      status: r.state.status,
-      settings: r.state.settings
-    }));
+    // Sweep any room with no human players
+    for (const [rId, r] of Array.from(rooms.entries())) {
+      if (!hasHumanPlayers(r)) {
+        cleanupRoom(rId);
+      }
+    }
+
+    const availableRooms = Array.from(rooms.values())
+      .filter(r => hasHumanPlayers(r))
+      .map(r => ({
+        roomId: r.state.roomId,
+        playersCount: r.state.players.length,
+        status: r.state.status,
+        settings: r.state.settings
+      }));
     socket.emit("availableRooms", availableRooms);
   });
 
@@ -628,6 +659,9 @@ io.on("connection", (socket) => {
       const history = roomChats.get(roomId) || [];
       socket.emit("chatHistory", history);
     } else {
+      if (!hasHumanPlayers(room)) {
+        cleanupRoom(roomId);
+      }
       socket.emit("error", "Cannot join room. Game in progress or full.");
     }
   });
@@ -858,7 +892,12 @@ io.on("connection", (socket) => {
       if (!hasHumanPlayers(room)) {
         cleanupRoom(roomId);
       } else {
+        room.state.actionCounter++;
         broadcastGameState(roomId);
+        if (room.state.status === "PLAYING") {
+          checkTimeouts(roomId);
+          scheduleBotActions(roomId);
+        }
       }
     }
   });
@@ -896,23 +935,22 @@ io.on("connection", (socket) => {
       if (roomId) {
         const room = rooms.get(roomId);
         if (room) {
-          if (room.state.status === "LOBBY") {
-            room.removePlayer(uid);
-            userRooms.delete(uid);
-            if (room.state.players.length === 0) {
-              rooms.delete(roomId);
-            } else {
-              broadcastGameState(roomId);
-            }
-          } else if (room.state.status === "FINISHED") {
-            room.removePlayer(uid);
-            userRooms.delete(uid);
-            if (room.state.players.length === 0) {
-              rooms.delete(roomId);
-            } else {
-              broadcastGameState(roomId);
+          room.removePlayer(uid);
+          userRooms.delete(uid);
+
+          // Clear room if no human players remain (not including bots)
+          if (!hasHumanPlayers(room)) {
+            cleanupRoom(roomId);
+          } else {
+            room.state.actionCounter++;
+            broadcastGameState(roomId);
+            if (room.state.status === "PLAYING") {
+              checkTimeouts(roomId);
+              scheduleBotActions(roomId);
             }
           }
+        } else {
+          userRooms.delete(uid);
         }
       }
     }, 15000); // 15 seconds grace period
