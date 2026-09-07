@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Socket } from "socket.io-client";
-import { ActionType, ChatMessage, ClientToServerEvents, GameState, Role, ServerToClientEvents } from "../shared/types";
+import { ActionState, ActionType, ChatMessage, ClientToServerEvents, GameState, Role, ServerToClientEvents } from "../shared/types";
 import { Coins, Swords, Smile, BookOpen, Flame, Zap, Bot, ChevronDown, ChevronUp, Eye, EyeOff, ScrollText, MessageSquare } from "lucide-react";
 import PlayingCard from "./PlayingCard";
 import ActionPanel from "./ActionPanel";
@@ -43,6 +43,7 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
   const [focusedRole, setFocusedRole] = useState<Role | "Unknown" | null>(null);
   const [coinPopClass, setCoinPopClass] = useState('');
   const prevCoinsRef = useRef<number>(0);
+  const prevActionRef = useRef<ActionState | null>(null);
 
   // Layout states: Collapsible hand cards & Slide-over Sidebar Drawer
   const [isHandCollapsed, setIsHandCollapsed] = useState<boolean>(false);
@@ -75,43 +76,208 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
 
   useEffect(() => {
     if (gameState.logs && gameState.logs.length > logsCountRef.current) {
+      const prevCount = logsCountRef.current;
       logsCountRef.current = gameState.logs.length;
-      const latestLog = gameState.logs[gameState.logs.length - 1];
-      if (latestLog && !latestLog.includes("เข้าร่วมห้อง") && !latestLog.includes("ออกจากห้อง")) {
+      const newLogs = gameState.logs.slice(prevCount);
+
+      // Iterate in reverse to find the most recent actionable event from new logs
+      for (let i = newLogs.length - 1; i >= 0; i--) {
+        const log = newLogs[i];
+        if (!log || log.includes("เข้าร่วมห้อง") || log.includes("ออกจากห้อง") || log.includes("อัปเดตการตั้งค่า")) {
+          continue;
+        }
+
+        // Ignore pure next-turn logs from triggering generic sounds
+        const isNextTurnLog = log.includes("ตาของ ") || log.includes("เริ่มเกม!");
+
         soundManager.init();
-        
-        if (latestLog.includes("จับโกหก") || latestLog.includes("ท้าทาย")) {
+
+        if (log.includes("จับโกหก") || log.includes("ท้าทาย")) {
           soundManager.playCyberAlarm();
-          setActiveFx({ type: "challenge", id: String(Date.now()) });
+          setActiveFx({ type: "challenge", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
           setTimeout(() => setActiveFx(null), 1200);
-          setActionBanner({ title: "CHALLENGE!", subtitle: latestLog.replace(/\[.*?\]\s*/, ""), type: "challenge" });
+          setActionBanner({ title: "CHALLENGE!", subtitle: log.replace(/\[.*?\]\s*/, ""), type: "challenge" });
           setTimeout(() => setActionBanner(null), 2500);
-        } else if (latestLog.includes("ทำรัฐประหาร")) {
+          break;
+        } else if (log.includes("ทำรัฐประหาร")) {
           soundManager.playChargingLaser();
           setTimeout(() => {
             soundManager.playCoupImpact();
             triggerScreenShake();
           }, 150);
-          setActiveFx({ type: "coup", id: String(Date.now()) });
-          setTimeout(() => setActiveFx(null), 1000);
-          setActionBanner({ title: "COUP D'ÉTAT!", subtitle: latestLog.replace(/\[.*?\]\s*/, ""), type: "coup" });
+          setActiveFx({ type: "coup", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
+          setTimeout(() => setActiveFx(null), 1100);
+          setActionBanner({ title: "COUP D'ÉTAT!", subtitle: log.replace(/\[.*?\]\s*/, ""), type: "coup" });
           setTimeout(() => setActionBanner(null), 2500);
-        } else if (latestLog.includes("สังหาร")) {
+          break;
+        } else if (
+          log.toLowerCase().includes("ขัดขวางการ assassinate") ||
+          log.includes("ขัดขวางการสังหาร") ||
+          (log.includes("ขัดขวาง") && log.includes("Contessa"))
+        ) {
+          // 6. Contessa blocks Assassination
+          setActiveFx({
+            type: "block_assassinate",
+            id: String(Date.now()),
+            title: "ROYAL AEGIS DEFENSE",
+            subtitle: log.replace(/\[.*?\]\s*/, ""),
+          });
+          setTimeout(() => setActiveFx(null), 3800);
+          break;
+        } else if (log.includes("สังหาร") && !log.includes("แจ้งเพื่อ") && !log.includes("ขัดขวาง") && !log.includes("ถูกสังหาร")) {
+          // 2. Assassin target execution succeeds
           soundManager.playBladeSlash();
           triggerScreenShake();
-          setActionBanner({ title: "ASSASSINATION!", subtitle: latestLog.replace(/\[.*?\]\s*/, ""), type: "assassinate" });
+          setActiveFx({
+            type: "assassinate",
+            id: String(Date.now()),
+            title: "TARGET EXECUTION",
+            subtitle: log.replace(/\[.*?\]\s*/, ""),
+          });
+          setTimeout(() => setActiveFx(null), 3800);
+          setActionBanner({ title: "ASSASSINATION!", subtitle: log.replace(/\[.*?\]\s*/, ""), type: "assassinate" });
           setTimeout(() => setActionBanner(null), 2500);
-        } else if (latestLog.includes("ขโมย")) {
+          break;
+        } else if (log.includes("ขัดขวางการ STEAL") || log.includes("ขัดขวางการขโมย") || log.includes("ขัดขวางการ Steal")) {
+          setActiveFx({ type: "steal_block", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
+          setTimeout(() => setActiveFx(null), 1200);
+          break;
+        } else if (log.includes("ขโมย") && !log.includes("แจ้งเพื่อ") && !log.includes("ขัดขวาง")) {
+          // 3. Captain steal succeeds
           soundManager.playStealTransfer();
-        } else if (latestLog.includes("เสีย") || latestLog.includes("กำจัด")) {
+          setActiveFx({
+            type: "steal",
+            id: String(Date.now()),
+            title: "FLEET RAID",
+            subtitle: log.replace(/\[.*?\]\s*/, ""),
+          });
+          setTimeout(() => setActiveFx(null), 3800);
+          break;
+        } else if (log.includes("ขัดขวางการ FOREIGN_AID") || log.includes("ขัดขวางการขอรับเงินช่วยเหลือ") || log.includes("ขัดขวางการ ForeignAid")) {
+          setActiveFx({ type: "block_foreign_aid", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
+          setTimeout(() => setActiveFx(null), 1100);
+          break;
+        } else if (log.includes("เก็บภาษีสำเร็จ") || (log.includes("เก็บภาษี") && !log.includes("แจ้งเพื่อ"))) {
+          // 4. Duke tax collection succeeds
+          soundManager.playCoin();
+          setActiveFx({
+            type: "tax",
+            id: String(Date.now()),
+            title: "TAX COLLECTION",
+            subtitle: log.replace(/\[.*?\]\s*/, ""),
+          });
+          setTimeout(() => setActiveFx(null), 3800);
+          break;
+        } else if (log.includes("เงินสนับสนุน") || log.includes("เงินช่วยเหลือ")) {
+          soundManager.playCoin();
+          setActiveFx({ type: "foreign_aid", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
+          setTimeout(() => setActiveFx(null), 900);
+          break;
+        } else if (log.includes("เปลี่ยนไพ่เรียบร้อย") || log.includes("สั่งบังคับให้สับเข้ากองกลาง") || log.includes("เปลี่ยนการ์ด")) {
+          // 1. Ambassador & Inquisitor exchange succeeds
+          setActiveFx({
+            type: "exchange",
+            id: String(Date.now()),
+            title: "CARAVAN EXCHANGE",
+            subtitle: log.replace(/\[.*?\]\s*/, ""),
+          });
+          setTimeout(() => setActiveFx(null), 3800);
+          break;
+        } else if (log.includes("กำลังส่องไพ่") || log.includes("ส่องไพ่ของ")) {
+          // 5. Inquisitor tribunal examination succeeds
+          setActiveFx({
+            type: "examine",
+            id: String(Date.now()),
+            title: "TRIBUNAL EXAMINATION",
+            subtitle: log.replace(/\[.*?\]\s*/, ""),
+          });
+          setTimeout(() => setActiveFx(null), 3800);
+          break;
+        } else if (log.includes("ถูกกำจัด")) {
           soundManager.playCardShatter();
           triggerScreenShake();
-        } else {
+          setActiveFx({ type: "player_eliminated", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
+          setTimeout(() => setActiveFx(null), 1300);
+          break;
+        } else if (log.includes("เสีย") || log.includes("สละทิ้ง")) {
+          soundManager.playCardShatter();
+          triggerScreenShake();
+          setActiveFx({ type: "lose_card", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
+          setTimeout(() => setActiveFx(null), 900);
+          break;
+        } else if (log.includes("ชนะเกม")) {
+          setActiveFx({ type: "victory", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
+          setTimeout(() => setActiveFx(null), 2000);
+          break;
+        } else if (!isNextTurnLog) {
           soundManager.playCoin();
         }
       }
     }
   }, [gameState.logs]);
+
+  // Phase transition detector for instant action cutscene triggering
+  useEffect(() => {
+    const current = gameState.currentAction;
+    const prev = prevActionRef.current;
+
+    if (current && prev) {
+      // 6. Contessa blocks Assassination
+      if (
+        current.phase === "WAITING_FOR_BLOCK_CHALLENGE" &&
+        prev.phase !== "WAITING_FOR_BLOCK_CHALLENGE" &&
+        current.actionType === "Assassinate" &&
+        current.claimedRole === "Contessa"
+      ) {
+        const blocker = gameState.players.find(p => p.id === current.blockerId);
+        setActiveFx({
+          type: "block_assassinate",
+          id: String(Date.now()),
+          title: "ROYAL AEGIS DEFENSE",
+          subtitle: `${blocker?.name || "Contessa"} ขอขัดขวางการ Assassinate!`,
+        });
+        setTimeout(() => setActiveFx(null), 3800);
+      }
+      // 2. Assassin target execution phase
+      else if (
+        current.actionType === "Assassinate" &&
+        current.phase === "RESOLVING_ASSASSINATION" &&
+        prev.phase !== "RESOLVING_ASSASSINATION"
+      ) {
+        const assassin = gameState.players.find(p => p.id === current.playerId);
+        const target = gameState.players.find(p => p.id === current.targetId);
+        soundManager.playBladeSlash();
+        triggerScreenShake();
+        setActiveFx({
+          type: "assassinate",
+          id: String(Date.now()),
+          title: "TARGET EXECUTION",
+          subtitle: `${assassin?.name || "Assassin"} สังหาร ${target?.name || "เป้าหมาย"}!`,
+        });
+        setTimeout(() => setActiveFx(null), 3800);
+        setActionBanner({ title: "ASSASSINATION!", subtitle: `${assassin?.name || "Assassin"} สังหาร ${target?.name || "เป้าหมาย"}!`, type: "assassinate" });
+        setTimeout(() => setActionBanner(null), 2500);
+      }
+      // 5. Inquisitor tribunal examination phase
+      else if (
+        current.actionType === "Examine" &&
+        current.phase === "EXAMINING" &&
+        prev.phase !== "EXAMINING"
+      ) {
+        const inquisitor = gameState.players.find(p => p.id === current.playerId);
+        const target = gameState.players.find(p => p.id === current.targetId);
+        setActiveFx({
+          type: "examine",
+          id: String(Date.now()),
+          title: "TRIBUNAL EXAMINATION",
+          subtitle: `${inquisitor?.name || "Inquisitor"} กำลังส่องไพ่ของ ${target?.name || "เป้าหมาย"}!`,
+        });
+        setTimeout(() => setActiveFx(null), 3800);
+      }
+    }
+
+    prevActionRef.current = current;
+  }, [gameState.currentAction, gameState.players]);
 
   useEffect(() => {
     const handleEmote = (playerId: string, emoji: string) => {
@@ -270,7 +436,7 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
   return (
     <div className={`flex flex-col h-full w-full overflow-hidden relative transition-transform duration-75 ${screenShake ? 'translate-x-1 -translate-y-1 rotate-[0.5deg]' : ''}`}>
       {/* Cinematic full-screen FX + single-canvas role/action FX */}
-      <CyberFxOverlay activeFx={activeFx} highFxEnabled={highFxEnabled} />
+      <CyberFxOverlay activeFx={activeFx} highFxEnabled={highFxEnabled} onClose={() => setActiveFx(null)} />
       <GameFxLayer gameState={gameState} enabled={highFxEnabled} />
 
       {amITargeted && (

@@ -353,7 +353,7 @@ export class GameRoom {
       const allPassed = eligibleChallengers.every(p => act.passedPlayerIds.includes(p.id));
 
       if (allPassed) {
-        this.log(`การขัดขวางสำเร็จ! การกระทำถูกยกเลิก`);
+        this.log(`การขัดขวางการ ${act.actionType} โดย ${act.claimedRole} สำเร็จ! การกระทำถูกยกเลิก`);
         this.nextTurn();
       }
       return true;
@@ -575,7 +575,7 @@ export class GameRoom {
       this.state.deck = shuffle(this.state.deck);
       blocker.influences.push(this.state.deck.pop()!);
       
-      this.log(`การขัดขวางเป็นผลสำเร็จ, การกระทำถูกยกเลิก`);
+      this.log(`การขัดขวางการ ${act.actionType} โดย ${act.claimedRole} เป็นผลสำเร็จ! การกระทำถูกยกเลิก`);
       this.triggerInfluenceLoss(challenger, "NEXT_TURN");
     } else {
       this.log(`${blocker.name} โกหก! การจับโกหกสำเร็จ`);
