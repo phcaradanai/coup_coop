@@ -187,7 +187,16 @@ export class GameRoom {
   
   nextTurn() {
     this.state.currentAction = null;
+    this.checkWinCondition();
+    if (this.state.status === "FINISHED") {
+      return;
+    }
     this.state.turnCounter++;
+    const alivePlayers = this.getAlivePlayers();
+    if (alivePlayers.length <= 1) {
+      this.checkWinCondition();
+      return;
+    }
     let nextIndex = (this.state.turnIndex + 1) % this.state.players.length;
     while (!this.state.players[nextIndex].isAlive) {
       nextIndex = (nextIndex + 1) % this.state.players.length;
@@ -243,9 +252,19 @@ export class GameRoom {
     } else if (actionType === "Coup") {
       if (player.coins < 7) return false;
       if (!targetId || targetId === playerId || !this.getPlayer(targetId)?.isAlive) return false;
+      const target = this.getPlayer(targetId);
+      if (!target || !target.isAlive || target.influences.length === 0) return false;
       player.coins -= 7;
-      this.state.currentAction = { playerId, actionType, targetId, phase: "RESOLVING_COUP", passCount: 0, passedPlayerIds: [] };
-      this.log(`${player.name} ${actionNames[actionType]} ใส่ ${this.getPlayer(targetId)?.name}!`);
+      if (target.influences.length <= 1) {
+        const card = target.influences.pop()!;
+        target.revealedInfluences.push(card);
+        this.log(`${player.name} ทำรัฐประหารใส่ ${target.name}! ${target.name} ต้องเปิดเผยไพ่ใบสุดท้าย ${card.role}`);
+        this.handlePlayerDeath(target);
+        this.nextTurn();
+      } else {
+        this.state.currentAction = { playerId, actionType, targetId, phase: "RESOLVING_COUP", passCount: 0, passedPlayerIds: [] };
+        this.log(`${player.name} ${actionNames[actionType]} ใส่ ${target.name}!`);
+      }
     } else if (actionType === "ForeignAid") {
       this.state.currentAction = { playerId, actionType, targetId: null, phase: "WAITING_FOR_BLOCK", passCount: 0, passedPlayerIds: [] };
       this.log(`${player.name} แจ้งเพื่อ ${actionNames[actionType]}.`);
@@ -365,6 +384,16 @@ export class GameRoom {
   resolveUnchallengedAction() {
     const act = this.state.currentAction!;
     
+    // Safety check: verify target is still alive if action targets a player
+    if (act.targetId) {
+      const target = this.getPlayer(act.targetId);
+      if (!target || !target.isAlive || target.influences.length === 0) {
+        this.log(`${target?.name || "เป้าหมาย"} ถูกกำจัดไปแล้ว การกระทำสิ้นสุด`);
+        this.nextTurn();
+        return;
+      }
+    }
+
     if (act.actionType === "Tax") {
       this.getPlayer(act.playerId)!.coins += 3;
       this.log(`${this.getPlayer(act.playerId)!.name} เก็บภาษีสำเร็จ ได้รับ 3 เหรียญ`);
@@ -411,6 +440,13 @@ export class GameRoom {
       if (!target || !target.isAlive || target.influences.length === 0) {
         this.log(`${target?.name || "เป้าหมาย"} ถูกกำจัดไปแล้ว การสังหารสิ้นสุด`);
         this.nextTurn();
+      } else if (target.influences.length <= 1) {
+        // Only 1 card left: auto-reveal and eliminate immediately (no choice needed)
+        const card = target.influences.pop()!;
+        target.revealedInfluences.push(card);
+        this.log(`${target.name} ถูกสังหารและเปิดเผยไพ่ใบสุดท้าย ${card.role}!`);
+        this.handlePlayerDeath(target);
+        this.nextTurn();
       } else {
         act.phase = "RESOLVING_ASSASSINATION";
         this.log(`${p!.name} สังหาร ${target.name}!`);
@@ -445,36 +481,51 @@ export class GameRoom {
   }
 
   resumeAfterLoss(nextStep: "NEXT_TURN" | "RESOLVE_ACTION" | "WAITING_FOR_BLOCK") {
-    const act = this.state.currentAction!;
+    if (this.state.status === "FINISHED") {
+      this.state.currentAction = null;
+      return;
+    }
+
+    const act = this.state.currentAction;
+    if (!act) return;
+
+    const actor = this.getPlayer(act.playerId);
+    if (!actor || !actor.isAlive) {
+      this.log(`${actor?.name || "ผู้กระทำ"} ถูกกำจัดไปแล้ว การกระทำสิ้นสุด`);
+      this.nextTurn();
+      return;
+    }
+
+    // If targeted action, ensure target is still alive!
+    if (act.targetId) {
+      const target = this.getPlayer(act.targetId);
+      if (!target || !target.isAlive || target.influences.length === 0) {
+        this.log(`${target?.name || "เป้าหมาย"} ถูกกำจัดไปแล้ว การกระทำสิ้นสุด`);
+        this.nextTurn();
+        return;
+      }
+    }
+
     if (nextStep === "NEXT_TURN") {
       this.nextTurn();
     } else if (nextStep === "RESOLVE_ACTION") {
       if (act.actionType === "Tax") {
-        const actor = this.getPlayer(act.playerId);
-        if (actor && actor.isAlive) {
-          actor.coins += 3;
-          this.log(`${actor.name} เก็บภาษีสำเร็จ ได้รับ 3 เหรียญ`);
-        }
+        actor.coins += 3;
+        this.log(`${actor.name} เก็บภาษีสำเร็จ ได้รับ 3 เหรียญ`);
         this.nextTurn();
       } else if (act.actionType === "Exchange") {
-        const actor = this.getPlayer(act.playerId);
-        if (actor && actor.isAlive) {
-          const drawCount = this.state.settings.roleSet === "inquisitor" ? 1 : 2;
-          const drawn: Card[] = [];
-          for (let i = 0; i < drawCount; i++) {
-            if (this.state.deck.length > 0) {
-              drawn.push(this.state.deck.pop()!);
-            }
+        const drawCount = this.state.settings.roleSet === "inquisitor" ? 1 : 2;
+        const drawn: Card[] = [];
+        for (let i = 0; i < drawCount; i++) {
+          if (this.state.deck.length > 0) {
+            drawn.push(this.state.deck.pop()!);
           }
-          act.exchangeCards = drawn;
-          act.phase = "EXCHANGING";
-        } else {
-          this.nextTurn();
         }
+        act.exchangeCards = drawn;
+        act.phase = "EXCHANGING";
       } else if (act.actionType === "Examine") {
-        const actor = this.getPlayer(act.playerId);
         const target = act.targetId ? this.getPlayer(act.targetId) : null;
-        if (actor && actor.isAlive && target && target.influences.length > 0) {
+        if (target && target.influences.length > 0) {
           const randomIdx = Math.floor(Math.random() * target.influences.length);
           act.examinedCard = target.influences[randomIdx];
           act.phase = "EXAMINING";
@@ -486,14 +537,9 @@ export class GameRoom {
         this.executeAction();
       }
     } else if (nextStep === "WAITING_FOR_BLOCK") {
-      const actor = this.getPlayer(act.playerId);
-      if (!actor || !actor.isAlive) {
-        this.nextTurn();
-      } else {
-        act.phase = "WAITING_FOR_BLOCK";
-        act.passCount = 0;
-        act.passedPlayerIds = [];
-      }
+      act.phase = "WAITING_FOR_BLOCK";
+      act.passCount = 0;
+      act.passedPlayerIds = [];
     }
   }
 
@@ -517,7 +563,12 @@ export class GameRoom {
       
       let nextStep: "NEXT_TURN" | "RESOLVE_ACTION" | "WAITING_FOR_BLOCK" = "RESOLVE_ACTION";
       if (act.actionType === "Assassinate" || act.actionType === "Steal") {
-        nextStep = "WAITING_FOR_BLOCK";
+        // If challenger was the target and only has 1 card, challenger will be eliminated by this challenge loss!
+        if (challenger.id === act.targetId && challenger.influences.length <= 1) {
+          nextStep = "NEXT_TURN";
+        } else {
+          nextStep = "WAITING_FOR_BLOCK";
+        }
       }
       this.triggerInfluenceLoss(challenger, nextStep);
     } else {
@@ -591,42 +642,52 @@ export class GameRoom {
 
     if (act.phase === "RESOLVING_CHALLENGE_LOSS" && act.losingPlayerId === playerId) {
       const p = this.getPlayer(playerId);
-      const cardIdx = p?.influences.findIndex(c => c.id === cardId);
-      if (p && cardIdx !== undefined && cardIdx !== -1) {
-        const card = p.influences[cardIdx];
-        p.influences.splice(cardIdx, 1);
-        p.revealedInfluences.push(card);
-        this.log(`${p.name} เผยไพ่และเสีย ${card.role} จากการแพ้การท้าทาย`);
-        if (p.influences.length === 0) this.handlePlayerDeath(p);
-        
+      if (!p) return false;
+      if (p.influences.length === 0) {
+        this.handlePlayerDeath(p);
         const nextStep = act.nextStepAfterLoss || "NEXT_TURN";
         this.resumeAfterLoss(nextStep);
         return true;
       }
+      const cardIdx = p.influences.findIndex(c => c.id === cardId);
+      const card = cardIdx !== -1 ? p.influences.splice(cardIdx, 1)[0] : p.influences.pop()!;
+      p.revealedInfluences.push(card);
+      this.log(`${p.name} เผยไพ่และเสีย ${card.role} จากการแพ้การท้าทาย`);
+      if (p.influences.length === 0) this.handlePlayerDeath(p);
+      
+      const nextStep = act.nextStepAfterLoss || "NEXT_TURN";
+      this.resumeAfterLoss(nextStep);
+      return true;
     } else if (act.phase === "RESOLVING_COUP" && act.targetId === playerId) {
       const p = this.getPlayer(playerId);
-      const cardIdx = p?.influences.findIndex(c => c.id === cardId);
-      if (p && cardIdx !== undefined && cardIdx !== -1) {
-        const card = p.influences[cardIdx];
-        p.influences.splice(cardIdx, 1);
-        p.revealedInfluences.push(card);
-        this.log(`${p.name} เผยไพ่และเสีย ${card.role} จากผลของการรัฐประหาร`);
-        if (p.influences.length === 0) this.handlePlayerDeath(p);
+      if (!p) return false;
+      if (p.influences.length === 0) {
+        this.handlePlayerDeath(p);
         this.nextTurn();
         return true;
       }
+      const cardIdx = p.influences.findIndex(c => c.id === cardId);
+      const card = cardIdx !== -1 ? p.influences.splice(cardIdx, 1)[0] : p.influences.pop()!;
+      p.revealedInfluences.push(card);
+      this.log(`${p.name} เผยไพ่และเสีย ${card.role} จากผลของการรัฐประหาร`);
+      if (p.influences.length === 0) this.handlePlayerDeath(p);
+      this.nextTurn();
+      return true;
     } else if (act.phase === "RESOLVING_ASSASSINATION" && act.targetId === playerId) {
       const p = this.getPlayer(playerId);
-      const cardIdx = p?.influences.findIndex(c => c.id === cardId);
-      if (p && cardIdx !== undefined && cardIdx !== -1) {
-        const card = p.influences[cardIdx];
-        p.influences.splice(cardIdx, 1);
-        p.revealedInfluences.push(card);
-        this.log(`${p.name} เผยไพ่และเสีย ${card.role} จากผลของการถูกสังหาร`);
-        if (p.influences.length === 0) this.handlePlayerDeath(p);
+      if (!p) return false;
+      if (p.influences.length === 0) {
+        this.handlePlayerDeath(p);
         this.nextTurn();
         return true;
       }
+      const cardIdx = p.influences.findIndex(c => c.id === cardId);
+      const card = cardIdx !== -1 ? p.influences.splice(cardIdx, 1)[0] : p.influences.pop()!;
+      p.revealedInfluences.push(card);
+      this.log(`${p.name} เผยไพ่และเสีย ${card.role} จากผลของการถูกสังหาร`);
+      if (p.influences.length === 0) this.handlePlayerDeath(p);
+      this.nextTurn();
+      return true;
     }
     return false;
   }
