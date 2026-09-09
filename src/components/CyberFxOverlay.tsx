@@ -45,6 +45,28 @@ export interface RoleVideoConfig {
 }
 
 export const ROLE_VIDEOS: Partial<Record<CyberFxType, RoleVideoConfig>> = {
+  challenge: {
+    mp4: "/video/CHALLENGE.mp4",
+    roleEn: "THE COURT",
+    roleTh: "การท้าทาย",
+    actionEn: "CHALLENGE DECLARED",
+    actionTh: "ประกาศจับโกหก",
+    accentHex: "#f59e0b",
+    borderColor: "border-amber-500/60",
+    glowColor: "rgba(245,158,11,0.4)",
+    badgeClass: "bg-amber-950/90 text-amber-300 border-amber-500/60",
+  },
+  coup: {
+    mp4: "/video/COUP_D_ÉTAT.mp4",
+    roleEn: "THE COURT",
+    roleTh: "รัฐประหาร",
+    actionEn: "COUP D'ÉTAT",
+    actionTh: "ประกาศรัฐประหาร",
+    accentHex: "#ef4444",
+    borderColor: "border-red-500/60",
+    glowColor: "rgba(239,68,68,0.45)",
+    badgeClass: "bg-red-950/90 text-red-300 border-red-500/60",
+  },
   exchange: {
     mp4: "/video/AMBASSADOR_CARAVAN_EXCHANGE.mp4",
     roleEn: "AMBASSADOR / INQUISITOR",
