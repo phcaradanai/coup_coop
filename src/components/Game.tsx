@@ -44,6 +44,7 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
   const [coinPopClass, setCoinPopClass] = useState('');
   const prevCoinsRef = useRef<number>(0);
   const prevActionRef = useRef<ActionState | null>(null);
+  const previousInfluenceStateRef = useRef<Map<string, { revealedCount: number; isAlive: boolean }> | null>(null);
   const actionFxLastTriggeredRef = useRef<Record<"challenge" | "coup", number>>({ challenge: 0, coup: 0 });
 
   // Layout states: Collapsible hand cards & Slide-over Sidebar Drawer
@@ -124,34 +125,6 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
         } else if (log.includes("ทำรัฐประหาร")) {
           triggerActionCinematic("coup", log.replace(/\[.*?\]\s*/, ""));
           break;
-        } else if (
-          log.toLowerCase().includes("ขัดขวางการ assassinate") ||
-          log.includes("ขัดขวางการสังหาร") ||
-          (log.includes("ขัดขวาง") && log.includes("Contessa"))
-        ) {
-          // 6. Contessa blocks Assassination
-          setActiveFx({
-            type: "block_assassinate",
-            id: String(Date.now()),
-            title: "ROYAL AEGIS DEFENSE",
-            subtitle: log.replace(/\[.*?\]\s*/, ""),
-          });
-          setTimeout(() => setActiveFx(null), 3800);
-          break;
-        } else if (log.includes("สังหาร") && !log.includes("แจ้งเพื่อ") && !log.includes("ขัดขวาง") && !log.includes("ถูกสังหาร")) {
-          // 2. Assassin target execution succeeds
-          soundManager.playBladeSlash();
-          triggerScreenShake();
-          setActiveFx({
-            type: "assassinate",
-            id: String(Date.now()),
-            title: "TARGET EXECUTION",
-            subtitle: log.replace(/\[.*?\]\s*/, ""),
-          });
-          setTimeout(() => setActiveFx(null), 3800);
-          setActionBanner({ title: "ASSASSINATION!", subtitle: log.replace(/\[.*?\]\s*/, ""), type: "assassinate" });
-          setTimeout(() => setActionBanner(null), 2500);
-          break;
         } else if (log.includes("ขัดขวางการ STEAL") || log.includes("ขัดขวางการขโมย") || log.includes("ขัดขวางการ Steal")) {
           setActiveFx({ type: "steal_block", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
           setTimeout(() => setActiveFx(null), 1200);
@@ -197,27 +170,9 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
           });
           setTimeout(() => setActiveFx(null), 3800);
           break;
-        } else if (log.includes("กำลังส่องไพ่") || log.includes("ส่องไพ่ของ")) {
-          // 5. Inquisitor tribunal examination succeeds
-          setActiveFx({
-            type: "examine",
-            id: String(Date.now()),
-            title: "TRIBUNAL EXAMINATION",
-            subtitle: log.replace(/\[.*?\]\s*/, ""),
-          });
-          setTimeout(() => setActiveFx(null), 3800);
-          break;
-        } else if (log.includes("ถูกกำจัด")) {
-          soundManager.playCardShatter();
-          triggerScreenShake();
-          setActiveFx({ type: "player_eliminated", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
-          setTimeout(() => setActiveFx(null), 1300);
-          break;
-        } else if (log.includes("เสีย") || log.includes("สละทิ้ง")) {
-          soundManager.playCardShatter();
-          triggerScreenShake();
-          setActiveFx({ type: "lose_card", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
-          setTimeout(() => setActiveFx(null), 900);
+        // Loss and elimination effects are driven by the state transition below.
+        // Consume these logs so they do not also receive the generic coin sound.
+        } else if (log.includes("ถูกกำจัด") || log.includes("เสีย") || log.includes("สละทิ้ง")) {
           break;
         } else if (log.includes("ชนะเกม")) {
           setActiveFx({ type: "victory", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
@@ -292,6 +247,49 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
 
     prevActionRef.current = current;
   }, [gameState.currentAction, gameState.players]);
+
+  // Use the authoritative game state rather than log text so every Coup,
+  // Assassination, and challenge loss reaches the corresponding overlay.
+  useEffect(() => {
+    const previous = previousInfluenceStateRef.current;
+    const current = new Map(
+      gameState.players.map((player) => [
+        player.id,
+        { revealedCount: player.revealedInfluences.length, isAlive: player.isAlive },
+      ]),
+    );
+
+    if (previous) {
+      const affectedPlayer = gameState.players.find((player) => {
+        const oldPlayer = previous.get(player.id);
+        return oldPlayer && player.revealedInfluences.length > oldPlayer.revealedCount;
+      });
+
+      if (affectedPlayer) {
+        const oldPlayer = previous.get(affectedPlayer.id)!;
+        const wasEliminated = oldPlayer.isAlive && !affectedPlayer.isAlive;
+        const event: CyberFxEvent = {
+          type: wasEliminated ? "player_eliminated" : "lose_card",
+          id: `${wasEliminated ? "eliminated" : "lost-influence"}-${gameState.actionCounter}-${affectedPlayer.id}`,
+          subtitle: wasEliminated
+            ? `${affectedPlayer.name} ถูกกำจัดออกจากเกม`
+            : `${affectedPlayer.name} เสียอิทธิพล 1 ใบ`,
+        };
+
+        soundManager.playCardShatter();
+        triggerScreenShake();
+        setActiveFx(event);
+        const duration = wasEliminated ? 1300 : 900;
+        const timeout = window.setTimeout(() => {
+          setActiveFx((active) => (active?.id === event.id ? null : active));
+        }, duration);
+        previousInfluenceStateRef.current = current;
+        return () => window.clearTimeout(timeout);
+      }
+    }
+
+    previousInfluenceStateRef.current = current;
+  }, [gameState.players, gameState.actionCounter]);
 
   useEffect(() => {
     const handleEmote = (playerId: string, emoji: string) => {
