@@ -164,6 +164,7 @@ export default function ActionPanel({
   if (act) {
     if (act.phase === "RESOLVING_CHALLENGE_LOSS") {
       if (act.losingPlayerId === me.id) {
+        if (me.influences.length === 0) return null;
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <div className="bg-zinc-900 border-2 border-red-500/80 p-6 md:p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center space-y-4 animate-in zoom-in-95 duration-200">
@@ -202,6 +203,7 @@ export default function ActionPanel({
     }
 
     if (act.phase === "RESOLVING_COUP" && act.targetId === me.id) {
+       if (me.influences.length === 0) return null;
        return (
          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
            <div className="bg-zinc-900 border-2 border-red-500/80 p-6 md:p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center space-y-4 animate-in zoom-in-95 duration-200">
@@ -227,6 +229,7 @@ export default function ActionPanel({
     }
 
     if (act.phase === "RESOLVING_ASSASSINATION" && act.targetId === me.id) {
+       if (me.influences.length === 0) return null;
        return (
          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
            <div className="bg-zinc-900 border-2 border-red-500/80 p-6 md:p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center space-y-4 animate-in zoom-in-95 duration-200">

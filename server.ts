@@ -207,8 +207,13 @@ function checkTimeouts(roomId: string) {
           }
         }
       } else if (currentAct.targetId) {
-        // Target didn't respond in time -> auto pass
-        currentRoom.passAction(currentAct.targetId);
+        // Target didn't respond in time -> auto pass or nextTurn if target is dead
+        const target = currentRoom.getPlayer(currentAct.targetId);
+        if (!target || !target.isAlive) {
+          currentRoom.nextTurn();
+        } else {
+          currentRoom.passAction(currentAct.targetId);
+        }
       }
     }
     // WAITING_FOR_BLOCK_CHALLENGE: auto-pass all eligible players
@@ -223,14 +228,18 @@ function checkTimeouts(roomId: string) {
     // RESOLVING_CHALLENGE_LOSS: auto reveal first card
     else if (currentAct.phase === "RESOLVING_CHALLENGE_LOSS" && currentAct.losingPlayerId) {
       const loser = currentRoom.getPlayer(currentAct.losingPlayerId);
-      if (loser && loser.influences.length > 0) {
+      if (!loser || !loser.isAlive || loser.influences.length === 0) {
+        currentRoom.nextTurn();
+      } else {
         currentRoom.resolveReveal(loser.id, loser.influences[0].id);
       }
     }
     // RESOLVING_COUP / RESOLVING_ASSASSINATION: auto reveal target's first card
     else if ((currentAct.phase === "RESOLVING_COUP" || currentAct.phase === "RESOLVING_ASSASSINATION") && currentAct.targetId) {
       const target = currentRoom.getPlayer(currentAct.targetId);
-      if (target && target.influences.length > 0) {
+      if (!target || !target.isAlive || target.influences.length === 0) {
+        currentRoom.nextTurn();
+      } else {
         currentRoom.resolveReveal(target.id, target.influences[0].id);
       }
     }
@@ -404,13 +413,21 @@ function scheduleBotActions(roomId: string) {
       });
     } else if (currentAct.targetId) {
       // Targeted block: only target can block or pass
-      const targetBot = room.getPlayer(currentAct.targetId);
-      if (targetBot && targetBot.isAlive && targetBot.isBot) {
+      const target = room.getPlayer(currentAct.targetId);
+      if (!target || !target.isAlive) {
+        room.nextTurn();
+        room.state.actionCounter++;
+        broadcastGameState(roomId);
+        checkTimeouts(roomId);
+        scheduleBotActions(roomId);
+        return;
+      }
+      if (target.isBot) {
         const delay = getRandomDelay(1200, 2000);
         const timeout = setTimeout(() => {
           if (!isStateStillValid()) return;
           const currentRoom = rooms.get(roomId)!;
-          const currentBot = currentRoom.getPlayer(targetBot.id);
+          const currentBot = currentRoom.getPlayer(target.id);
           if (!currentBot || !currentBot.isAlive) return;
 
           const decision = BotBrain.decideBlockOrPass(currentRoom, currentBot);
@@ -501,7 +518,15 @@ function scheduleBotActions(roomId: string) {
   // 2.5 RESOLVING_COUP or RESOLVING_ASSASSINATION
   if ((currentAct.phase === "RESOLVING_COUP" || currentAct.phase === "RESOLVING_ASSASSINATION") && currentAct.targetId) {
     const target = room.getPlayer(currentAct.targetId);
-    if (target && target.isAlive && target.isBot) {
+    if (!target || !target.isAlive) {
+      room.nextTurn();
+      room.state.actionCounter++;
+      broadcastGameState(roomId);
+      checkTimeouts(roomId);
+      scheduleBotActions(roomId);
+      return;
+    }
+    if (target.isBot) {
       const delay = getRandomDelay(1100, 1800);
       const timeout = setTimeout(() => {
         if (!isStateStillValid()) return;
