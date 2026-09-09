@@ -494,16 +494,40 @@ function drawHammer(ctx: CanvasRenderingContext2D, target: Point, progress: numb
 }
 
 function drawInfluenceBreak(ctx: CanvasRenderingContext2D, target: Point, progress: number) {
-  const t = easeOutCubic(progress);
+  const approach = easeOutCubic(Math.min(1, progress / 0.52));
+  const fadeOut = 1 - clamp01((progress - 0.66) / 0.34);
+  const tip = {
+    x: target.x,
+    y: target.y - 82 + approach * 76,
+  };
+
   ctx.save();
-  for (let i = 0; i < 12; i++) {
-    const angle = (Math.PI * 2 * i) / 12 + i * 0.17;
-    const distance = 16 + t * (30 + (i % 4) * 8);
-    const x = target.x + Math.cos(angle) * distance;
-    const y = target.y + Math.sin(angle) * distance + t * t * 24;
-    ctx.globalAlpha = 1 - progress;
-    setFill(ctx, i % 3 === 0 ? "#ffffff" : "#ef4444", 8);
-    ctx.fillRect(x - 2, y - 2, 4 + (i % 2) * 2, 4);
+  ctx.globalAlpha = fadeOut;
+  setStroke(ctx, "#f8fafc", 3, 18);
+  ctx.beginPath();
+  ctx.moveTo(tip.x, tip.y);
+  ctx.lineTo(tip.x, tip.y - 58);
+  ctx.stroke();
+  setStroke(ctx, "#ef4444", 7, 26);
+  ctx.beginPath();
+  ctx.moveTo(tip.x, tip.y - 8);
+  ctx.lineTo(tip.x, tip.y - 42);
+  ctx.stroke();
+  setFill(ctx, "#f87171", 16);
+  ctx.beginPath();
+  ctx.moveTo(tip.x, tip.y + 8);
+  ctx.lineTo(tip.x - 9, tip.y - 12);
+  ctx.lineTo(tip.x + 9, tip.y - 12);
+  ctx.closePath();
+  ctx.fill();
+
+  if (progress > 0.42) {
+    const impact = clamp01((progress - 0.42) / 0.42);
+    ctx.globalAlpha = 1 - impact;
+    setStroke(ctx, "#fecaca", 2, 16);
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, 12 + impact * 42, 0, Math.PI * 2);
+    ctx.stroke();
   }
   ctx.restore();
 }

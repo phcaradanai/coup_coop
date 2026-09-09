@@ -44,6 +44,7 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
   const [coinPopClass, setCoinPopClass] = useState('');
   const prevCoinsRef = useRef<number>(0);
   const prevActionRef = useRef<ActionState | null>(null);
+  const actionFxLastTriggeredRef = useRef<Record<"challenge" | "coup", number>>({ challenge: 0, coup: 0 });
 
   // Layout states: Collapsible hand cards & Slide-over Sidebar Drawer
   const [isHandCollapsed, setIsHandCollapsed] = useState<boolean>(false);
@@ -61,6 +62,31 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
   const triggerScreenShake = () => {
     setScreenShake(true);
     setTimeout(() => setScreenShake(false), 600);
+  };
+
+  const triggerActionCinematic = (type: "challenge" | "coup", subtitle: string) => {
+    const now = Date.now();
+    if (now - actionFxLastTriggeredRef.current[type] < 2500) return;
+    actionFxLastTriggeredRef.current[type] = now;
+
+    const event: CyberFxEvent = { type, id: `${type}-${now}`, subtitle };
+    setActiveFx(event);
+    setTimeout(() => {
+      setActiveFx((current) => current?.id === event.id ? null : current);
+    }, 3800);
+
+    if (type === "challenge") {
+      soundManager.playCyberAlarm();
+      setActionBanner({ title: "CHALLENGE!", subtitle, type });
+    } else {
+      soundManager.playChargingLaser();
+      setTimeout(() => {
+        soundManager.playCoupImpact();
+        triggerScreenShake();
+      }, 150);
+      setActionBanner({ title: "COUP D'ÉTAT!", subtitle, type });
+    }
+    setTimeout(() => setActionBanner(null), 2500);
   };
 
   useEffect(() => {
@@ -92,23 +118,11 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
 
         soundManager.init();
 
-        if (log.includes("จับโกหก") || log.includes("ท้าทาย")) {
-          soundManager.playCyberAlarm();
-          setActiveFx({ type: "challenge", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
-          setTimeout(() => setActiveFx(null), 1200);
-          setActionBanner({ title: "CHALLENGE!", subtitle: log.replace(/\[.*?\]\s*/, ""), type: "challenge" });
-          setTimeout(() => setActionBanner(null), 2500);
+        if (log.includes("จับโกหกการเป็น") || log.includes("จับโกหกการขัดขวางของ")) {
+          triggerActionCinematic("challenge", log.replace(/\[.*?\]\s*/, ""));
           break;
         } else if (log.includes("ทำรัฐประหาร")) {
-          soundManager.playChargingLaser();
-          setTimeout(() => {
-            soundManager.playCoupImpact();
-            triggerScreenShake();
-          }, 150);
-          setActiveFx({ type: "coup", id: String(Date.now()), subtitle: log.replace(/\[.*?\]\s*/, "") });
-          setTimeout(() => setActiveFx(null), 1100);
-          setActionBanner({ title: "COUP D'ÉTAT!", subtitle: log.replace(/\[.*?\]\s*/, ""), type: "coup" });
-          setTimeout(() => setActionBanner(null), 2500);
+          triggerActionCinematic("coup", log.replace(/\[.*?\]\s*/, ""));
           break;
         } else if (
           log.toLowerCase().includes("ขัดขวางการ assassinate") ||
@@ -606,11 +620,20 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
                 <ActionPanel 
                   gameState={gameState} 
                   me={me}
-                  onTakeAction={(action, targetId) => socket.emit("takeAction", action, targetId)}
-                  onChallenge={() => socket.emit("challengeAction")}
+                  onTakeAction={(action, targetId) => {
+                    if (action === "Coup") triggerActionCinematic("coup", "ประกาศรัฐประหาร");
+                    socket.emit("takeAction", action, targetId);
+                  }}
+                  onChallenge={() => {
+                    triggerActionCinematic("challenge", "ประกาศจับโกหก");
+                    socket.emit("challengeAction");
+                  }}
                   onPass={() => socket.emit("passAction")}
                   onBlock={(role) => socket.emit("blockAction", role)}
-                  onChallengeBlock={() => socket.emit("challengeBlock")}
+                  onChallengeBlock={() => {
+                    triggerActionCinematic("challenge", "ประกาศจับโกหกการขัดขวาง");
+                    socket.emit("challengeBlock");
+                  }}
                   onResolveReveal={(id) => socket.emit("resolveReveal", id)}
                   onResolveExchange={(ids) => socket.emit("resolveExchange", ids)}
                   onResolveExamine={(decision) => socket.emit("resolveExamine", decision)}
@@ -749,7 +772,10 @@ export default function Game({ socket, gameState, uid, playerName }: Props) {
              <ActionPanel 
                gameState={gameState} 
                me={me}
-               onTakeAction={(action, targetId) => socket.emit("takeAction", action, targetId)}
+               onTakeAction={(action, targetId) => {
+                 if (action === "Coup") triggerActionCinematic("coup", "ประกาศรัฐประหาร");
+                 socket.emit("takeAction", action, targetId);
+               }}
                onChallenge={() => {}}
                onPass={() => {}}
                onBlock={() => {}}
